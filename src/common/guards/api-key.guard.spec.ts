@@ -15,7 +15,7 @@ function makeContext(apiKey: string | undefined): ExecutionContext {
 describe('ApiKeyGuard', () => {
   let guard: ApiKeyGuard;
   const configService = {
-    get: jest.fn().mockReturnValue('secret'),
+    get: vi.fn().mockReturnValue('secret'),
   } as unknown as ConfigService;
 
   beforeEach(() => {
@@ -41,7 +41,7 @@ describe('ApiKeyGuard', () => {
 
   it('API_KEY 환경변수가 설정되지 않으면 UnauthorizedException', () => {
     const emptyConfigService = {
-      get: jest.fn().mockReturnValue(''),
+      get: vi.fn().mockReturnValue(''),
     } as unknown as ConfigService;
     const guardWithEmptyConfig = new ApiKeyGuard(emptyConfigService);
     expect(() => guardWithEmptyConfig.canActivate(makeContext('any-key'))).toThrow(

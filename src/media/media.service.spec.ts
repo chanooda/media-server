@@ -1,22 +1,23 @@
 // src/media/media.service.spec.ts
+import type { Mocked } from 'vitest';
 import { MediaService } from './media.service';
 import { ConfigService } from '@nestjs/config';
 import { StorageProvider } from '../storage/storage-provider.interface';
 
-const mockStorage: jest.Mocked<StorageProvider> = {
-  generateUploadUrl: jest.fn(),
-  getObject: jest.fn(),
-  upload: jest.fn(),
-  deleteObject: jest.fn(),
-  listObjects: jest.fn(),
+const mockStorage: Mocked<StorageProvider> = {
+  generateUploadUrl: vi.fn(),
+  getObject: vi.fn(),
+  upload: vi.fn(),
+  deleteObject: vi.fn(),
+  listObjects: vi.fn(),
 };
 
 const mockConfig = {
-  get: jest.fn((key: string) => {
+  get: vi.fn((key: string) => {
     if (key === 'storage.cdnDomain') return 'media.example.com';
     return undefined;
   }),
-  getOrThrow: jest.fn((key: string) => {
+  getOrThrow: vi.fn((key: string) => {
     if (key === 'storage.cdnDomain') return 'media.example.com';
     throw new Error(`Config key not found: ${key}`);
   }),
@@ -26,7 +27,7 @@ describe('MediaService', () => {
   let service: MediaService;
 
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
     service = new MediaService(mockStorage, mockConfig);
   });
 

@@ -1,24 +1,25 @@
 // src/image/image-conversion.service.spec.ts
+import type { Mocked } from 'vitest';
 import { ImageConversionService } from './image-conversion.service';
 import { ImageService } from './image.service';
 import { ConfigService } from '@nestjs/config';
 import { StorageProvider } from '../storage/storage-provider.interface';
 import { Logger } from '@nestjs/common';
 
-const mockStorage: jest.Mocked<StorageProvider> = {
-  generateUploadUrl: jest.fn(),
-  getObject: jest.fn(),
-  upload: jest.fn(),
-  deleteObject: jest.fn(),
-  listObjects: jest.fn(),
+const mockStorage: Mocked<StorageProvider> = {
+  generateUploadUrl: vi.fn(),
+  getObject: vi.fn(),
+  upload: vi.fn(),
+  deleteObject: vi.fn(),
+  listObjects: vi.fn(),
 };
 
 const mockImageService = {
-  convertToWebp: jest.fn(),
-} as jest.Mocked<ImageService>;
+  convertToWebp: vi.fn(),
+} as Mocked<ImageService>;
 
 const mockConfig = {
-  get: jest.fn((key: string) => {
+  get: vi.fn((key: string) => {
     if (key === 'storage.cronConcurrency') return 3;
     return undefined;
   }),
@@ -28,9 +29,9 @@ describe('ImageConversionService', () => {
   let service: ImageConversionService;
 
   beforeEach(() => {
-    jest.clearAllMocks();
-    jest.spyOn(Logger.prototype, 'log').mockImplementation(() => {});
-    jest.spyOn(Logger.prototype, 'error').mockImplementation(() => {});
+    vi.clearAllMocks();
+    vi.spyOn(Logger.prototype, 'log').mockImplementation(() => {});
+    vi.spyOn(Logger.prototype, 'error').mockImplementation(() => {});
     service = new ImageConversionService(mockStorage, mockImageService, mockConfig);
   });
 

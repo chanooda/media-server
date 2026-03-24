@@ -6,8 +6,8 @@ import { ApiKeyGuard } from '../common/guards/api-key.guard';
 import { ConfigService } from '@nestjs/config';
 
 const mockMediaService = {
-  generateUploadUrl: jest.fn(),
-  deleteFile: jest.fn(),
+  generateUploadUrl: vi.fn(),
+  deleteFile: vi.fn(),
 };
 
 describe('MediaController', () => {
@@ -18,7 +18,7 @@ describe('MediaController', () => {
       controllers: [MediaController],
       providers: [
         { provide: MediaService, useValue: mockMediaService },
-        { provide: ConfigService, useValue: { get: jest.fn().mockReturnValue('key') } },
+        { provide: ConfigService, useValue: { get: vi.fn().mockReturnValue('key') } },
       ],
     })
       .overrideGuard(ApiKeyGuard)
@@ -28,7 +28,7 @@ describe('MediaController', () => {
     controller = module.get<MediaController>(MediaController);
   });
 
-  afterEach(() => jest.clearAllMocks());
+  afterEach(() => vi.clearAllMocks());
 
   describe('POST /media/upload', () => {
     it('업로드 URL 발급 결과 반환', async () => {
