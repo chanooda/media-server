@@ -3,10 +3,8 @@ import { Inject, Injectable, Logger } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { ConfigService } from '@nestjs/config';
 import * as path from 'path';
-import {
-  STORAGE_PROVIDER,
-  StorageProvider,
-} from '../storage/storage-provider.interface';
+import { STORAGE_PROVIDER } from '../storage/storage-provider.interface';
+import type { StorageProvider } from '../storage/storage-provider.interface';
 import { ImageService } from './image.service';
 
 @Injectable()
