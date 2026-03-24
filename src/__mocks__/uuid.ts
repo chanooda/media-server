@@ -1,4 +1,3 @@
-// Manual mock for uuid to work around ESM-only uuid v13 in Jest/CJS environment
-const { randomUUID } = require('crypto');
-
+// Manual mock for uuid (ESM-only in v13) — redirected via moduleNameMapper in package.json
+import { randomUUID } from 'crypto';
 export const v4 = (): string => randomUUID();

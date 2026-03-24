@@ -1,5 +1,5 @@
 // src/media/media.service.ts
-import { Inject, Injectable } from '@nestjs/common';
+import { Inject, Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { v4 as uuidv4 } from 'uuid';
 import * as path from 'path';
@@ -22,10 +22,15 @@ export interface UploadUrlResult {
 
 @Injectable()
 export class MediaService {
+  private readonly logger = new Logger(MediaService.name);
+  private readonly cdnDomain: string;
+
   constructor(
     @Inject(STORAGE_PROVIDER) private readonly storage: StorageProvider,
     private readonly configService: ConfigService,
-  ) {}
+  ) {
+    this.cdnDomain = configService.getOrThrow<string>('storage.cdnDomain');
+  }
 
   async generateUploadUrl(
     filename: string,
@@ -43,19 +48,21 @@ export class MediaService {
       maxSize,
     );
 
-    const cdnDomain = this.configService.get<string>('storage.cdnDomain');
-    const publicKey = isImage
-      ? key.replace(new RegExp(`\\${ext}$`), '.webp')
+    const publicKey = isImage && ext
+      ? key.slice(0, -ext.length) + '.webp'
+      : isImage
+      ? key + '.webp'
       : key;
-    const publicUrl = `https://${cdnDomain}/media/${publicKey}`;
+    const publicUrl = `https://${this.cdnDomain}/media/${publicKey}`;
 
     return { key, uploadUrl, publicUrl, expiresIn: 600 };
   }
 
   async deleteFile(key: string): Promise<void> {
     await this.storage.deleteObject(`media/${key}`);
-    await this.storage.deleteObject(`raw/${key}`).catch(() => {
-      // raw/ 원본이 없거나 삭제 실패해도 무시
+    await this.storage.deleteObject(`raw/${key}`).catch((err: unknown) => {
+      // raw/ object may not exist if Cron already converted and deleted it
+      this.logger.warn(`raw/ delete skipped for key=${key}: ${String(err)}`);
     });
   }
 }

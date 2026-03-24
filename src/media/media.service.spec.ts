@@ -16,6 +16,10 @@ const mockConfig = {
     if (key === 'storage.cdnDomain') return 'media.example.com';
     return undefined;
   }),
+  getOrThrow: jest.fn((key: string) => {
+    if (key === 'storage.cdnDomain') return 'media.example.com';
+    throw new Error(`Config key not found: ${key}`);
+  }),
 } as unknown as ConfigService;
 
 describe('MediaService', () => {
