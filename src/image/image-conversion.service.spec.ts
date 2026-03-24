@@ -78,4 +78,10 @@ describe('ImageConversionService', () => {
     await service.processImages();
     expect(mockStorage.getObject).not.toHaveBeenCalled();
   });
+
+  it('listObjects 실패 시 에러 로그 후 조용히 종료', async () => {
+    mockStorage.listObjects.mockRejectedValue(new Error('R2 unavailable'));
+    await expect(service.processImages()).resolves.not.toThrow();
+    expect(mockStorage.getObject).not.toHaveBeenCalled();
+  });
 });
