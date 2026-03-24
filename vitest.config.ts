@@ -1,6 +1,6 @@
 import swc from 'unplugin-swc';
 import { defineConfig } from 'vitest/config';
-import { fileURLToPath } from 'url';
+import path from 'path';
 
 export default defineConfig({
   test: {
@@ -16,7 +16,7 @@ export default defineConfig({
   },
   resolve: {
     alias: {
-      uuid: fileURLToPath(new URL('./src/__mocks__/uuid.ts', import.meta.url)),
+      uuid: path.resolve(__dirname, './src/__mocks__/uuid.ts'),
     },
   },
   plugins: [
