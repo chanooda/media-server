@@ -21,6 +21,17 @@ const mockConfigService = {
     };
     return map[key];
   }),
+  getOrThrow: jest.fn((key: string) => {
+    const map: Record<string, string> = {
+      'storage.r2AccountId': 'acc123',
+      'storage.r2AccessKeyId': 'key',
+      'storage.r2SecretAccessKey': 'secret',
+      'storage.r2BucketName': 'my-bucket',
+    };
+    const value = map[key];
+    if (!value) throw new Error(`Config key not found: ${key}`);
+    return value;
+  }),
 } as unknown as ConfigService;
 
 describe('R2StorageProvider', () => {
