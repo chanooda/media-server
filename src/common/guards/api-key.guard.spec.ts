@@ -24,6 +24,7 @@ describe('ApiKeyGuard', () => {
 
   it('유효한 API Key이면 true 반환', () => {
     expect(guard.canActivate(makeContext('secret'))).toBe(true);
+    expect(configService.get).toHaveBeenCalledWith('storage.apiKey');
   });
 
   it('API Key가 없으면 UnauthorizedException', () => {
@@ -34,6 +35,16 @@ describe('ApiKeyGuard', () => {
 
   it('API Key가 틀리면 UnauthorizedException', () => {
     expect(() => guard.canActivate(makeContext('wrong'))).toThrow(
+      UnauthorizedException,
+    );
+  });
+
+  it('API_KEY 환경변수가 설정되지 않으면 UnauthorizedException', () => {
+    const emptyConfigService = {
+      get: jest.fn().mockReturnValue(''),
+    } as unknown as ConfigService;
+    const guardWithEmptyConfig = new ApiKeyGuard(emptyConfigService);
+    expect(() => guardWithEmptyConfig.canActivate(makeContext('any-key'))).toThrow(
       UnauthorizedException,
     );
   });
