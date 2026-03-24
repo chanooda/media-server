@@ -1,4 +1,5 @@
 import { IsIn, IsString, Matches } from 'class-validator';
+import { ApiProperty } from '@nestjs/swagger';
 
 export const ALLOWED_IMAGE_TYPES = [
   'image/jpeg',
@@ -30,12 +31,21 @@ export const MAX_SIZE_BY_TYPE: Record<string, number> = {
 };
 
 export class UploadDto {
+  @ApiProperty({
+    description: '업로드할 파일명 (영문자, 숫자, . _ - ( ) 허용)',
+    example: 'profile-photo.jpg',
+  })
   @IsString()
   @Matches(/^[a-zA-Z0-9._\-\s()]+$/, {
     message: 'filename must be alphanumeric with . _ - ( ) allowed',
   })
   filename: string;
 
+  @ApiProperty({
+    description: '파일 MIME 타입',
+    enum: ALLOWED_CONTENT_TYPES,
+    example: 'image/jpeg',
+  })
   @IsIn(ALLOWED_CONTENT_TYPES, {
     message: `contentType must be one of: ${ALLOWED_CONTENT_TYPES.join(', ')}`,
   })
