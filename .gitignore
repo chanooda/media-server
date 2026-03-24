@@ -8,3 +8,7 @@ node_modules/
 
 # coverage
 coverage/
+
+.superpowers/
+.playwright-mcp
+.serena
