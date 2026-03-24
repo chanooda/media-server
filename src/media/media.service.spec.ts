@@ -43,7 +43,9 @@ describe('MediaService', () => {
         5 * 1024 * 1024,
       );
       expect(result.uploadUrl).toBe('https://presigned');
-      expect(result.publicUrl).toMatch(/^https:\/\/media\.example\.com\/media\/.+\.webp$/);
+      expect(result.publicUrl).toMatch(
+        /^https:\/\/media\.example\.com\/media\/.+\.webp$/,
+      );
       expect(result.expiresIn).toBe(600);
     });
   });
@@ -72,8 +74,12 @@ describe('MediaService', () => {
 
       await service.deleteFile('abc-file.webp');
 
-      expect(mockStorage.deleteObject).toHaveBeenCalledWith('media/abc-file.webp');
-      expect(mockStorage.deleteObject).toHaveBeenCalledWith('raw/abc-file.webp');
+      expect(mockStorage.deleteObject).toHaveBeenCalledWith(
+        'media/abc-file.webp',
+      );
+      expect(mockStorage.deleteObject).toHaveBeenCalledWith(
+        'raw/abc-file.webp',
+      );
     });
 
     it('raw/ 삭제 실패해도 에러 미전파', async () => {

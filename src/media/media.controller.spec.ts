@@ -18,7 +18,10 @@ describe('MediaController', () => {
       controllers: [MediaController],
       providers: [
         { provide: MediaService, useValue: mockMediaService },
-        { provide: ConfigService, useValue: { get: vi.fn().mockReturnValue('key') } },
+        {
+          provide: ConfigService,
+          useValue: { get: vi.fn().mockReturnValue('key') },
+        },
       ],
     })
       .overrideGuard(ApiKeyGuard)
@@ -57,7 +60,9 @@ describe('MediaController', () => {
     it('파일 삭제 후 void 반환', async () => {
       mockMediaService.deleteFile.mockResolvedValue(undefined);
       await controller.delete('abc-photo.webp');
-      expect(mockMediaService.deleteFile).toHaveBeenCalledWith('abc-photo.webp');
+      expect(mockMediaService.deleteFile).toHaveBeenCalledWith(
+        'abc-photo.webp',
+      );
     });
   });
 });

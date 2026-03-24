@@ -44,8 +44,8 @@ describe('ApiKeyGuard', () => {
       get: vi.fn().mockReturnValue(''),
     } as unknown as ConfigService;
     const guardWithEmptyConfig = new ApiKeyGuard(emptyConfigService);
-    expect(() => guardWithEmptyConfig.canActivate(makeContext('any-key'))).toThrow(
-      UnauthorizedException,
-    );
+    expect(() =>
+      guardWithEmptyConfig.canActivate(makeContext('any-key')),
+    ).toThrow(UnauthorizedException);
   });
 });

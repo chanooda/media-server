@@ -34,7 +34,9 @@ export class MediaService {
     filename: string,
     contentType: AllowedContentType,
   ): Promise<UploadUrlResult> {
-    const isImage = (ALLOWED_IMAGE_TYPES as readonly string[]).includes(contentType);
+    const isImage = (ALLOWED_IMAGE_TYPES as readonly string[]).includes(
+      contentType,
+    );
     const ext = path.extname(filename);
     const key = `${uuidv4()}-${path.basename(filename)}`;
     const storageKey = isImage ? `raw/${key}` : `media/${key}`;
@@ -46,11 +48,12 @@ export class MediaService {
       maxSize,
     );
 
-    const publicKey = isImage && ext
-      ? key.slice(0, -ext.length) + '.webp'
-      : isImage
-      ? key + '.webp'
-      : key;
+    const publicKey =
+      isImage && ext
+        ? key.slice(0, -ext.length) + '.webp'
+        : isImage
+          ? key + '.webp'
+          : key;
     const publicUrl = `https://${this.cdnDomain}/media/${publicKey}`;
 
     return { key, uploadUrl, publicUrl, expiresIn: 600 };

@@ -1,10 +1,7 @@
 // src/storage/providers/r2-storage.provider.spec.ts
 import { R2StorageProvider } from './r2-storage.provider';
 import { ConfigService } from '@nestjs/config';
-import {
-  PutObjectCommand,
-  DeleteObjectCommand,
-} from '@aws-sdk/client-s3';
+import { PutObjectCommand, DeleteObjectCommand } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { Readable } from 'stream';
 
@@ -56,7 +53,11 @@ describe('R2StorageProvider', () => {
   describe('generateUploadUrl', () => {
     it('presigned URL을 반환한다', async () => {
       vi.mocked(getSignedUrl).mockResolvedValue('https://presigned-url');
-      const url = await provider.generateUploadUrl('raw/file.jpg', 'image/jpeg', 5 * 1024 * 1024);
+      const url = await provider.generateUploadUrl(
+        'raw/file.jpg',
+        'image/jpeg',
+        5 * 1024 * 1024,
+      );
       expect(url).toBe('https://presigned-url');
       expect(getSignedUrl).toHaveBeenCalledWith(
         expect.anything(),
@@ -90,10 +91,7 @@ describe('R2StorageProvider', () => {
   describe('listObjects', () => {
     it('prefix에 해당하는 객체 목록을 반환한다', async () => {
       mockSend.mockResolvedValue({
-        Contents: [
-          { Key: 'raw/file1.jpg' },
-          { Key: 'raw/file2.png' },
-        ],
+        Contents: [{ Key: 'raw/file1.jpg' }, { Key: 'raw/file2.png' }],
       });
       const result = await provider.listObjects('raw/');
       expect(result).toHaveLength(2);
@@ -110,7 +108,11 @@ describe('R2StorageProvider', () => {
   describe('upload', () => {
     it('PutObjectCommand를 호출한다', async () => {
       mockSend.mockResolvedValue({});
-      await provider.upload('media/file.webp', Buffer.from('data'), 'image/webp');
+      await provider.upload(
+        'media/file.webp',
+        Buffer.from('data'),
+        'image/webp',
+      );
       expect(mockSend).toHaveBeenCalledWith(expect.any(PutObjectCommand));
     });
   });

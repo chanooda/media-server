@@ -25,7 +25,9 @@ export class R2StorageProvider implements StorageProvider {
       endpoint: `https://${accountId}.r2.cloudflarestorage.com`,
       credentials: {
         accessKeyId: configService.getOrThrow<string>('storage.r2AccessKeyId'),
-        secretAccessKey: configService.getOrThrow<string>('storage.r2SecretAccessKey'),
+        secretAccessKey: configService.getOrThrow<string>(
+          'storage.r2SecretAccessKey',
+        ),
       },
     });
   }
@@ -53,7 +55,10 @@ export class R2StorageProvider implements StorageProvider {
       throw new Error(`R2 returned no body for key: ${key}`);
     }
     const body = await this.streamToBuffer(response.Body as Readable);
-    return { body, contentType: response.ContentType ?? 'application/octet-stream' };
+    return {
+      body,
+      contentType: response.ContentType ?? 'application/octet-stream',
+    };
   }
 
   async upload(key: string, body: Buffer, contentType: string): Promise<void> {
@@ -79,11 +84,13 @@ export class R2StorageProvider implements StorageProvider {
     const response = await this.client.send(
       new ListObjectsV2Command({ Bucket: this.bucket, Prefix: prefix }),
     );
-    return (response.Contents ?? [])
-      .filter((obj) => obj.Key != null)
-      // contentType is always '' — ListObjectsV2 does not return content-type metadata.
-      // Callers (ImageConversionService) only use the `key` field from this result.
-      .map((obj) => ({ key: obj.Key!, contentType: '' }));
+    return (
+      (response.Contents ?? [])
+        .filter((obj) => obj.Key != null)
+        // contentType is always '' — ListObjectsV2 does not return content-type metadata.
+        // Callers (ImageConversionService) only use the `key` field from this result.
+        .map((obj) => ({ key: obj.Key!, contentType: '' }))
+    );
   }
 
   private streamToBuffer(stream: Readable): Promise<Buffer> {

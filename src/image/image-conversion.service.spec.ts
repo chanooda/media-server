@@ -32,7 +32,11 @@ describe('ImageConversionService', () => {
     vi.clearAllMocks();
     vi.spyOn(Logger.prototype, 'log').mockImplementation(() => {});
     vi.spyOn(Logger.prototype, 'error').mockImplementation(() => {});
-    service = new ImageConversionService(mockStorage, mockImageService, mockConfig);
+    service = new ImageConversionService(
+      mockStorage,
+      mockImageService,
+      mockConfig,
+    );
   });
 
   it('raw/ 이미지를 webp 변환 후 media/에 저장하고 raw/ 삭제', async () => {

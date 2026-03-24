@@ -20,7 +20,8 @@ export class ImageConversionService {
     private readonly imageService: ImageService,
     private readonly configService: ConfigService,
   ) {
-    this.concurrency = configService.get<number>('storage.cronConcurrency') ?? 3;
+    this.concurrency =
+      configService.get<number>('storage.cronConcurrency') ?? 3;
   }
 
   @Cron(CronExpression.EVERY_MINUTE)
@@ -29,7 +30,9 @@ export class ImageConversionService {
     try {
       objects = await this.storage.listObjects('raw/');
     } catch (err) {
-      this.logger.error(`Failed to list raw/ objects: ${this.toErrorMessage(err)}`);
+      this.logger.error(
+        `Failed to list raw/ objects: ${this.toErrorMessage(err)}`,
+      );
       return;
     }
 
