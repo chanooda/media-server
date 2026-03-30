@@ -12,7 +12,15 @@ ACTIVE_COLOR_FILE="${APP_DIR}/active_color"
 HEALTH_CHECK_RETRIES=30
 HEALTH_CHECK_INTERVAL=2
 
-ACTIVE_COLOR=$(cat "${ACTIVE_COLOR_FILE}")
+if [[ ! -f "${ACTIVE_COLOR_FILE}" ]]; then
+  echo "ERROR: ${ACTIVE_COLOR_FILE} not found. Create it with: echo blue > ${ACTIVE_COLOR_FILE}" >&2
+  exit 1
+fi
+ACTIVE_COLOR=$(tr -d '[:space:]' < "${ACTIVE_COLOR_FILE}")
+if [[ "${ACTIVE_COLOR}" != "blue" && "${ACTIVE_COLOR}" != "green" ]]; then
+  echo "ERROR: Invalid active color '${ACTIVE_COLOR}'. Must be 'blue' or 'green'." >&2
+  exit 1
+fi
 if [[ "${ACTIVE_COLOR}" == "blue" ]]; then
   NEW_COLOR="green"
   NEW_PORT=3002
@@ -65,5 +73,6 @@ echo "${NEW_COLOR}" > "${ACTIVE_COLOR_FILE}"
 
 echo "▶ 구버전 media-server-${ACTIVE_COLOR} 중지..."
 docker compose stop "media-server-${ACTIVE_COLOR}"
+docker compose rm -f "media-server-${ACTIVE_COLOR}"
 
 echo "✅ 배포 완료: ${NEW_COLOR} (태그: ${IMAGE_TAG})"
