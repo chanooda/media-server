@@ -48,10 +48,19 @@ jobs:
         with:
           ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
 
-      - name: Update .env on server
+      - name: Create .env file
         run: |
-          echo "${{ secrets.ENV_FILE }}" | ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} \
-            "tee /opt/media-server/.env > /dev/null && chmod 600 /opt/media-server/.env"
+          jq -r 'to_entries
+            | map(select(.key | test("^(SSH_|REGISTRY_|ENV_FILE)") | not))
+            | map("\(.key)=\(.value|tostring)")
+            | .[]' <<< "$SECRETS_CONTEXT" > .env
+        env:
+          SECRETS_CONTEXT: ${{ toJson(secrets) }}
+
+      - name: Upload .env to server
+        run: |
+          scp .env ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:/opt/media-server/.env
+          ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} "chmod 600 /opt/media-server/.env"
 
       - name: Deploy to server
         run: |
