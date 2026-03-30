@@ -16,6 +16,7 @@ services:
 
   media-server-blue:
     image: registry.yourdomain.com/media-server:${IMAGE_TAG:-latest}
+    pull_policy: never
     container_name: media-server-blue
     restart: unless-stopped
     env_file:
@@ -28,6 +29,7 @@ services:
 
   media-server-green:
     image: registry.yourdomain.com/media-server:${IMAGE_TAG:-latest}
+    pull_policy: never
     container_name: media-server-green
     restart: unless-stopped
     env_file:

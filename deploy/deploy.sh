@@ -39,7 +39,7 @@ docker pull "${IMAGE}"
 
 cd "${APP_DIR}"
 echo "▶ media-server-${NEW_COLOR} 시작..."
-docker compose up -d "media-server-${NEW_COLOR}"
+docker compose up -d --force-recreate "media-server-${NEW_COLOR}"
 
 echo "▶ 헬스체크 대기 중 (최대 $((HEALTH_CHECK_RETRIES * HEALTH_CHECK_INTERVAL))초)..."
 for i in $(seq 1 ${HEALTH_CHECK_RETRIES}); do
