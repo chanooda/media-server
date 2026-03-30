@@ -48,6 +48,11 @@ jobs:
         with:
           ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
 
+      - name: Update .env on server
+        run: |
+          echo "${{ secrets.ENV_FILE }}" | ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} \
+            "tee /opt/media-server/.env > /dev/null && chmod 600 /opt/media-server/.env"
+
       - name: Deploy to server
         run: |
           ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} \
