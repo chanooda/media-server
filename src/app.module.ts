@@ -5,6 +5,7 @@ import { storageConfig } from './config/storage.config';
 import { StorageModule } from './storage/storage.module';
 import { ImageModule } from './image/image.module';
 import { MediaModule } from './media/media.module';
+import { HealthModule } from './health/health.module';
 @Module({
   imports: [
     ConfigModule.forRoot({
@@ -12,6 +13,7 @@ import { MediaModule } from './media/media.module';
       load: [storageConfig],
     }),
     ScheduleModule.forRoot(),
+    HealthModule,
     StorageModule,
     ImageModule,
     MediaModule,
