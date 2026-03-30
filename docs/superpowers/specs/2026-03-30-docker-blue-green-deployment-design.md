@@ -84,7 +84,7 @@ server {
 ```bash
 ln -sfn /opt/media-server/nginx/upstream/${NEW_COLOR}.conf \
         /opt/media-server/nginx/upstream/active.conf
-nginx -s reload
+sudo nginx -t && sudo nginx -s reload
 ```
 
 ---
