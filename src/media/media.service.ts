@@ -28,7 +28,10 @@ export class MediaService {
     @Inject(STORAGE_PROVIDER) private readonly storage: StorageProvider,
     private readonly configService: ConfigService,
   ) {
-    this.cdnDomain = configService.getOrThrow<string>('storage.cdnDomain');
+    this.cdnDomain =
+      process.env.NODE_ENV === 'development'
+        ? ''
+        : configService.getOrThrow<string>('storage.cdnDomain');
   }
 
   async generateUploadUrl(
@@ -55,7 +58,10 @@ export class MediaService {
         : isImage
           ? key + '.webp'
           : key;
-    const publicUrl = `https://${this.cdnDomain}/media/${publicKey}`;
+    const port = process.env.PORT ?? '3000';
+    const publicUrl = this.cdnDomain
+      ? `https://${this.cdnDomain}/media/${publicKey}`
+      : `http://localhost:${port}/media/${key}`;
 
     return { key, uploadUrl, publicUrl, expiresIn: 600 };
   }
