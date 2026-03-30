@@ -20,6 +20,14 @@ export const ALLOWED_CONTENT_TYPES = [
 
 export type AllowedContentType = (typeof ALLOWED_CONTENT_TYPES)[number];
 
+export const ALLOWED_IMAGE_EXTENSIONS = [
+  '.jpg',
+  '.jpeg',
+  '.png',
+  '.gif',
+  '.webp',
+];
+
 export const MAX_SIZE_BY_TYPE: Record<string, number> = {
   'image/jpeg': 5 * 1024 * 1024,
   'image/png': 5 * 1024 * 1024,

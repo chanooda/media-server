@@ -3,10 +3,12 @@ import {
   Body,
   Controller,
   Delete,
+  Get,
   HttpCode,
   HttpStatus,
   Param,
   Post,
+  Redirect,
   UseGuards,
 } from '@nestjs/common';
 import {
@@ -22,13 +24,34 @@ import { UploadUrlResultDto } from './dto/upload-url-result.dto';
 import { MediaService } from './media.service';
 
 @ApiTags('media')
-@ApiSecurity('api-key')
 @Controller('media')
-@UseGuards(ApiKeyGuard)
 export class MediaController {
   constructor(private readonly mediaService: MediaService) {}
 
+  @Get(':key')
+  @Redirect()
+  @ApiOperation({
+    summary: '미디어 파일 조회 (인증 불필요)',
+    description:
+      'WebP 변환이 완료된 경우 WebP를, 변환 중이면 원본 파일로 302 리다이렉트합니다.',
+  })
+  @ApiParam({
+    name: 'key',
+    description: '파일 키 (upload 응답의 key 값)',
+    example: 'a1b2c3-photo.jpg',
+  })
+  @ApiResponse({ status: 302, description: '파일 presigned URL로 리다이렉트' })
+  @ApiResponse({ status: 404, description: '파일 없음' })
+  async getFile(
+    @Param('key') key: string,
+  ): Promise<{ url: string; statusCode: number }> {
+    const url = await this.mediaService.getFileRedirectUrl(key);
+    return { url, statusCode: HttpStatus.FOUND };
+  }
+
   @Post('upload')
+  @UseGuards(ApiKeyGuard)
+  @ApiSecurity('api-key')
   @ApiOperation({
     summary: 'Presigned upload URL 생성',
     description:
@@ -49,6 +72,8 @@ export class MediaController {
   }
 
   @Delete(':key')
+  @UseGuards(ApiKeyGuard)
+  @ApiSecurity('api-key')
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiOperation({
     summary: '미디어 파일 삭제',

@@ -4,6 +4,7 @@ import { ConfigService } from '@nestjs/config';
 import {
   S3Client,
   GetObjectCommand,
+  HeadObjectCommand,
   PutObjectCommand,
   DeleteObjectCommand,
   ListObjectsV2Command,
@@ -32,11 +33,7 @@ export class R2StorageProvider implements StorageProvider {
     });
   }
 
-  async generateUploadUrl(
-    key: string,
-    contentType: string,
-    maxSize: number,
-  ): Promise<string> {
+  async generateUploadUrl(key: string, contentType: string): Promise<string> {
     // ContentLength is not included: presigned PUT ContentLength is exact (not a max).
     // Client-side size validation is enforced by callers (UploadDto + service layer).
     const command = new PutObjectCommand({
@@ -45,6 +42,22 @@ export class R2StorageProvider implements StorageProvider {
       ContentType: contentType,
     });
     return getSignedUrl(this.client, command, { expiresIn: 600 });
+  }
+
+  async generateDownloadUrl(key: string, expiresIn = 3600): Promise<string> {
+    const command = new GetObjectCommand({ Bucket: this.bucket, Key: key });
+    return getSignedUrl(this.client, command, { expiresIn });
+  }
+
+  async objectExists(key: string): Promise<boolean> {
+    try {
+      await this.client.send(
+        new HeadObjectCommand({ Bucket: this.bucket, Key: key }),
+      );
+      return true;
+    } catch {
+      return false;
+    }
   }
 
   async getObject(key: string): Promise<{ body: Buffer; contentType: string }> {

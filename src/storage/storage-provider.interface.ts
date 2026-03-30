@@ -6,6 +6,8 @@ export interface StorageProvider {
     contentType: string,
     maxSize: number,
   ): Promise<string>;
+  generateDownloadUrl(key: string, expiresIn?: number): Promise<string>;
+  objectExists(key: string): Promise<boolean>;
   getObject(key: string): Promise<{ body: Buffer; contentType: string }>;
   upload(key: string, body: Buffer, contentType: string): Promise<void>;
   deleteObject(key: string): Promise<void>;

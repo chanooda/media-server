@@ -72,9 +72,25 @@ export class ImageConversionService {
         `Failed to convert ${rawKey}: ${this.toErrorMessage(err)}`,
         err instanceof Error ? err.stack : undefined,
       );
-      // 원본 유지 — 다음 Cron에서 재시도
+      // raw/ → failed/ 로 이동하여 무한 재시도 방지
+      await this.moveToFailed(rawKey);
     } finally {
       this.processingKeys.delete(rawKey);
+    }
+  }
+
+  private async moveToFailed(rawKey: string): Promise<void> {
+    try {
+      const filename = path.basename(rawKey);
+      const failedKey = `failed/${filename}`;
+      const { body, contentType } = await this.storage.getObject(rawKey);
+      await this.storage.upload(failedKey, body, contentType);
+      await this.storage.deleteObject(rawKey);
+      this.logger.warn(`Moved unconvertible file: ${rawKey} → ${failedKey}`);
+    } catch (moveErr) {
+      this.logger.error(
+        `Failed to move ${rawKey} to failed/: ${this.toErrorMessage(moveErr)}`,
+      );
     }
   }
 

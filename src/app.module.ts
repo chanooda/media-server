@@ -5,7 +5,6 @@ import { storageConfig } from './config/storage.config';
 import { StorageModule } from './storage/storage.module';
 import { ImageModule } from './image/image.module';
 import { MediaModule } from './media/media.module';
-
 @Module({
   imports: [
     ConfigModule.forRoot({
