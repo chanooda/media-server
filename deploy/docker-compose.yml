@@ -1,0 +1,39 @@
+services:
+
+  registry:
+    image: registry:2
+    container_name: media-registry
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:5000:5000"
+    volumes:
+      - ./registry/data:/var/lib/registry
+      - ./registry/auth:/auth
+    environment:
+      REGISTRY_AUTH: htpasswd
+      REGISTRY_AUTH_HTPASSWD_REALM: Registry Realm
+      REGISTRY_AUTH_HTPASSWD_PATH: /auth/htpasswd
+
+  media-server-blue:
+    image: registry.yourdomain.com/media-server:${IMAGE_TAG:-latest}
+    container_name: media-server-blue
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      PORT: "3001"
+      NODE_ENV: production
+    ports:
+      - "127.0.0.1:3001:3001"
+
+  media-server-green:
+    image: registry.yourdomain.com/media-server:${IMAGE_TAG:-latest}
+    container_name: media-server-green
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      PORT: "3002"
+      NODE_ENV: production
+    ports:
+      - "127.0.0.1:3002:3002"
