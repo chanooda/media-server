@@ -11,6 +11,10 @@ export class ApiKeyGuard implements CanActivate {
   constructor(private readonly configService: ConfigService) {}
 
   canActivate(context: ExecutionContext): boolean {
+    if (process.env.NODE_ENV === 'development') {
+      return true;
+    }
+
     const request = context
       .switchToHttp()
       .getRequest<{ headers: Record<string, string> }>();
