@@ -1,0 +1,45 @@
+# deploy/k8s/ingress.yaml
+apiVersion: traefik.containo.us/v1alpha1
+kind: Middleware
+metadata:
+  name: security-headers
+  namespace: media-server
+spec:
+  headers:
+    contentTypeNosniff: true
+    frameDeny: true
+    stsSeconds: 31536000
+    stsIncludeSubdomains: true
+    stsPreload: true
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: media-server
+  namespace: media-server
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+    traefik.ingress.kubernetes.io/router.entrypoints: websecure
+    traefik.ingress.kubernetes.io/router.middlewares: media-server-security-headers@kubernetescrd
+    traefik.ingress.kubernetes.io/router.tls: "true"
+    # 업로드 크기 100MB 제한
+    traefik.ingress.kubernetes.io/buffering: |
+      maxRequestBodyBytes: 104857600
+      memRequestBodyBytes: 2097152
+spec:
+  ingressClassName: traefik
+  tls:
+    - hosts:
+        - media.chanoo.dev
+      secretName: media-tls
+  rules:
+    - host: media.chanoo.dev
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: media-server
+                port:
+                  number: 3000
