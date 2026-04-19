@@ -1,24 +1,25 @@
 // src/image/image-conversion.service.spec.ts
+import type { Mocked } from 'vitest';
 import { ImageConversionService } from './image-conversion.service';
 import { ImageService } from './image.service';
 import { ConfigService } from '@nestjs/config';
 import { StorageProvider } from '../storage/storage-provider.interface';
 import { Logger } from '@nestjs/common';
 
-const mockStorage: jest.Mocked<StorageProvider> = {
-  generateUploadUrl: jest.fn(),
-  getObject: jest.fn(),
-  upload: jest.fn(),
-  deleteObject: jest.fn(),
-  listObjects: jest.fn(),
+const mockStorage: Mocked<StorageProvider> = {
+  generateUploadUrl: vi.fn(),
+  getObject: vi.fn(),
+  upload: vi.fn(),
+  deleteObject: vi.fn(),
+  listObjects: vi.fn(),
 };
 
 const mockImageService = {
-  convertToWebp: jest.fn(),
-} as jest.Mocked<ImageService>;
+  convertToWebp: vi.fn(),
+} as Mocked<ImageService>;
 
 const mockConfig = {
-  get: jest.fn((key: string) => {
+  get: vi.fn((key: string) => {
     if (key === 'storage.cronConcurrency') return 3;
     return undefined;
   }),
@@ -28,10 +29,14 @@ describe('ImageConversionService', () => {
   let service: ImageConversionService;
 
   beforeEach(() => {
-    jest.clearAllMocks();
-    jest.spyOn(Logger.prototype, 'log').mockImplementation(() => {});
-    jest.spyOn(Logger.prototype, 'error').mockImplementation(() => {});
-    service = new ImageConversionService(mockStorage, mockImageService, mockConfig);
+    vi.clearAllMocks();
+    vi.spyOn(Logger.prototype, 'log').mockImplementation(() => {});
+    vi.spyOn(Logger.prototype, 'error').mockImplementation(() => {});
+    service = new ImageConversionService(
+      mockStorage,
+      mockImageService,
+      mockConfig,
+    );
   });
 
   it('raw/ 이미지를 webp 변환 후 media/에 저장하고 raw/ 삭제', async () => {
@@ -58,7 +63,7 @@ describe('ImageConversionService', () => {
     expect(mockStorage.deleteObject).toHaveBeenCalledWith('raw/abc-photo.jpg');
   });
 
-  it('변환 실패 시 raw/ 원본 유지 (deleteObject 미호출)', async () => {
+  it('변환 실패 시 raw/ → failed/ 로 이동 (무한 재시도 방지)', async () => {
     mockStorage.listObjects.mockResolvedValue([
       { key: 'raw/bad.jpg', contentType: 'image/jpeg' },
     ]);
@@ -67,10 +72,17 @@ describe('ImageConversionService', () => {
       contentType: 'image/jpeg',
     });
     mockImageService.convertToWebp.mockRejectedValue(new Error('convert fail'));
+    mockStorage.upload.mockResolvedValue(undefined);
+    mockStorage.deleteObject.mockResolvedValue(undefined);
 
     await service.processImages();
 
-    expect(mockStorage.deleteObject).not.toHaveBeenCalled();
+    expect(mockStorage.upload).toHaveBeenCalledWith(
+      'failed/bad.jpg',
+      expect.any(Buffer),
+      'image/jpeg',
+    );
+    expect(mockStorage.deleteObject).toHaveBeenCalledWith('raw/bad.jpg');
   });
 
   it('raw/가 비어있으면 아무것도 처리하지 않음', async () => {

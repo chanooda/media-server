@@ -4,6 +4,7 @@ import { ConfigService } from '@nestjs/config';
 import {
   S3Client,
   GetObjectCommand,
+  HeadObjectCommand,
   PutObjectCommand,
   DeleteObjectCommand,
   ListObjectsV2Command,
@@ -25,16 +26,14 @@ export class R2StorageProvider implements StorageProvider {
       endpoint: `https://${accountId}.r2.cloudflarestorage.com`,
       credentials: {
         accessKeyId: configService.getOrThrow<string>('storage.r2AccessKeyId'),
-        secretAccessKey: configService.getOrThrow<string>('storage.r2SecretAccessKey'),
+        secretAccessKey: configService.getOrThrow<string>(
+          'storage.r2SecretAccessKey',
+        ),
       },
     });
   }
 
-  async generateUploadUrl(
-    key: string,
-    contentType: string,
-    maxSize: number,
-  ): Promise<string> {
+  async generateUploadUrl(key: string, contentType: string): Promise<string> {
     // ContentLength is not included: presigned PUT ContentLength is exact (not a max).
     // Client-side size validation is enforced by callers (UploadDto + service layer).
     const command = new PutObjectCommand({
@@ -45,6 +44,22 @@ export class R2StorageProvider implements StorageProvider {
     return getSignedUrl(this.client, command, { expiresIn: 600 });
   }
 
+  async generateDownloadUrl(key: string, expiresIn = 3600): Promise<string> {
+    const command = new GetObjectCommand({ Bucket: this.bucket, Key: key });
+    return getSignedUrl(this.client, command, { expiresIn });
+  }
+
+  async objectExists(key: string): Promise<boolean> {
+    try {
+      await this.client.send(
+        new HeadObjectCommand({ Bucket: this.bucket, Key: key }),
+      );
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
   async getObject(key: string): Promise<{ body: Buffer; contentType: string }> {
     const response = await this.client.send(
       new GetObjectCommand({ Bucket: this.bucket, Key: key }),
@@ -53,7 +68,10 @@ export class R2StorageProvider implements StorageProvider {
       throw new Error(`R2 returned no body for key: ${key}`);
     }
     const body = await this.streamToBuffer(response.Body as Readable);
-    return { body, contentType: response.ContentType ?? 'application/octet-stream' };
+    return {
+      body,
+      contentType: response.ContentType ?? 'application/octet-stream',
+    };
   }
 
   async upload(key: string, body: Buffer, contentType: string): Promise<void> {
@@ -79,11 +97,13 @@ export class R2StorageProvider implements StorageProvider {
     const response = await this.client.send(
       new ListObjectsV2Command({ Bucket: this.bucket, Prefix: prefix }),
     );
-    return (response.Contents ?? [])
-      .filter((obj) => obj.Key != null)
-      // contentType is always '' — ListObjectsV2 does not return content-type metadata.
-      // Callers (ImageConversionService) only use the `key` field from this result.
-      .map((obj) => ({ key: obj.Key!, contentType: '' }));
+    return (
+      (response.Contents ?? [])
+        .filter((obj) => obj.Key != null)
+        // contentType is always '' — ListObjectsV2 does not return content-type metadata.
+        // Callers (ImageConversionService) only use the `key` field from this result.
+        .map((obj) => ({ key: obj.Key!, contentType: '' }))
+    );
   }
 
   private streamToBuffer(stream: Readable): Promise<Buffer> {
