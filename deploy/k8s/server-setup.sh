@@ -22,21 +22,29 @@ kubectl -n cert-manager rollout status deployment/cert-manager --timeout=180s
 kubectl -n cert-manager rollout status deployment/cert-manager-webhook --timeout=180s
 kubectl -n cert-manager rollout status deployment/cert-manager-cainjector --timeout=180s
 
-echo "▶ 자체 레지스트리(registry.chanoo.dev) insecure 허용 설정..."
-sudo mkdir -p /etc/rancher/k3s
-sudo tee /etc/rancher/k3s/registries.yaml > /dev/null <<'EOF'
-mirrors:
-  "registry.chanoo.dev":
-    endpoint:
-      - "https://registry.chanoo.dev"
-EOF
-sudo systemctl restart k3s
-echo "▶ k3s 재시작 후 준비 대기..."
-sleep 10
-kubectl wait --for=condition=ready node --all --timeout=60s
+echo "▶ Docker 레지스트리 실행..."
+docker run -d \
+  --name registry \
+  --restart unless-stopped \
+  -p 127.0.0.1:5000:5000 \
+  -e REGISTRY_AUTH=htpasswd \
+  -e REGISTRY_AUTH_HTPASSWD_REALM="Registry Realm" \
+  -e REGISTRY_AUTH_HTPASSWD_PATH=/auth/htpasswd \
+  -v /opt/registry/data:/var/lib/registry \
+  -v /opt/registry/auth:/auth \
+  registry:2
+
+echo "▶ registry-service.yaml에 노드 IP 주입..."
+NODE_IP=$(kubectl get nodes -o jsonpath='{.items[0].status.addresses[?(@.type=="InternalIP")].address}')
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+sed -i "s/NODE_IP_PLACEHOLDER/${NODE_IP}/" "${SCRIPT_DIR}/registry-service.yaml"
+echo "  노드 IP: ${NODE_IP}"
 
 echo "✅ 서버 초기 설정 완료"
 echo ""
 echo "다음 단계:"
-echo "  1. GitHub Secrets에 KUBE_CONFIG 추가 (cat ~/.kube/config | base64)"
-echo "  2. GitHub Actions에서 첫 배포 실행"
+echo "  1. htpasswd 생성: docker run --rm httpd:2 htpasswd -Bbn <user> <password>"
+echo "     → sudo mkdir -p /opt/registry/auth"
+echo "     → 위 출력값을 sudo tee /opt/registry/auth/htpasswd"
+echo "  2. GitHub Secrets에 KUBE_CONFIG 추가: sudo cat /etc/rancher/k3s/k3s.yaml | base64"
+echo "  3. GitHub Actions에서 첫 배포 실행"
