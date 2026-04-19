@@ -1,3 +1,4 @@
+# .github/workflows/deploy.yml
 name: Build and Deploy
 
 on:
@@ -23,7 +24,7 @@ jobs:
       - name: Login to self-hosted registry
         uses: docker/login-action@v3
         with:
-          registry: registry.yourdomain.com
+          registry: registry.chanoo.dev
           username: ${{ secrets.REGISTRY_USER }}
           password: ${{ secrets.REGISTRY_PASSWORD }}
 
@@ -33,36 +34,67 @@ jobs:
           context: .
           push: true
           tags: |
-            registry.yourdomain.com/media-server:${{ steps.tag.outputs.tag }}
-            registry.yourdomain.com/media-server:latest
+            registry.chanoo.dev/media-server:${{ steps.tag.outputs.tag }}
+            registry.chanoo.dev/media-server:latest
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
-      - name: Setup SSH known hosts
+      - name: Setup kubectl
         run: |
-          mkdir -p ~/.ssh
-          echo "${{ secrets.SSH_KNOWN_HOSTS }}" >> ~/.ssh/known_hosts
-
-      - name: Setup SSH agent
-        uses: webfactory/ssh-agent@v0.9.0
-        with:
-          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
-
-      - name: Create .env file
-        run: |
-          jq -r 'to_entries
-            | map(select(.key | test("^(SSH_|REGISTRY_|ENV_FILE)") | not))
-            | map("\(.key)=\(.value|tostring)")
-            | .[]' <<< "$SECRETS_CONTEXT" > .env
+          echo "${{ secrets.KUBE_CONFIG }}" | base64 -d > /tmp/kubeconfig
+          chmod 600 /tmp/kubeconfig
         env:
+          KUBECONFIG: /tmp/kubeconfig
+
+      - name: Apply k8s base manifests
+        run: |
+          kubectl apply -f deploy/k8s/namespace.yaml
+          kubectl apply -f deploy/k8s/cluster-issuer.yaml
+          kubectl apply -f deploy/k8s/service.yaml
+          kubectl apply -f deploy/k8s/ingress.yaml
+        env:
+          KUBECONFIG: /tmp/kubeconfig
+
+      - name: Create registry secret
+        run: |
+          kubectl create secret docker-registry regcred \
+            --docker-server=registry.chanoo.dev \
+            --docker-username=${{ secrets.REGISTRY_USER }} \
+            --docker-password=${{ secrets.REGISTRY_PASSWORD }} \
+            -n media-server --dry-run=client -o yaml | kubectl apply -f -
+        env:
+          KUBECONFIG: /tmp/kubeconfig
+
+      - name: Create app env secret
+        run: |
+          # GitHub Secrets에서 앱 환경변수만 추출하여 k8s Secret 생성
+          # SSH_, REGISTRY_, KUBE_ 접두사 secrets는 제외
+          jq -r 'to_entries
+            | map(select(.key | test("^(SSH_|REGISTRY_|KUBE_)") | not))
+            | map("--from-literal=\(.key)=\(.value|tostring)")
+            | .[]' <<< "$SECRETS_CONTEXT" | xargs \
+            kubectl create secret generic media-server-env \
+              -n media-server --dry-run=client -o yaml | kubectl apply -f -
+        env:
+          KUBECONFIG: /tmp/kubeconfig
           SECRETS_CONTEXT: ${{ toJson(secrets) }}
 
-      - name: Upload .env to server
-        run: |
-          scp .env ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:/opt/media-server/.env
-          ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} "chmod 600 /opt/media-server/.env"
+      - name: Apply deployment
+        run: kubectl apply -f deploy/k8s/deployment.yaml
+        env:
+          KUBECONFIG: /tmp/kubeconfig
 
-      - name: Deploy to server
+      - name: Update image and trigger rolling update
         run: |
-          ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} \
-            "/opt/media-server/deploy.sh ${{ steps.tag.outputs.tag }}"
+          kubectl set image deployment/media-server \
+            app=registry.chanoo.dev/media-server:${{ steps.tag.outputs.tag }} \
+            -n media-server
+        env:
+          KUBECONFIG: /tmp/kubeconfig
+
+      - name: Wait for rollout
+        run: |
+          kubectl rollout status deployment/media-server \
+            -n media-server --timeout=120s
+        env:
+          KUBECONFIG: /tmp/kubeconfig
