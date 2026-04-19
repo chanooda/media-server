@@ -1,0 +1,38 @@
+# deploy/k8s/registry-ingress.yaml
+apiVersion: traefik.containo.us/v1alpha1
+kind: Middleware
+metadata:
+  name: registry-upload-limit
+  namespace: media-server
+spec:
+  buffering:
+    maxRequestBodyBytes: 2147483648
+    memRequestBodyBytes: 2097152
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: registry
+  namespace: media-server
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+    traefik.ingress.kubernetes.io/router.entrypoints: websecure
+    traefik.ingress.kubernetes.io/router.middlewares: media-server-registry-upload-limit@kubernetescrd
+    traefik.ingress.kubernetes.io/router.tls: "true"
+spec:
+  ingressClassName: traefik
+  tls:
+    - hosts:
+        - registry.chanoo.dev
+      secretName: registry-tls
+  rules:
+    - host: registry.chanoo.dev
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: registry
+                port:
+                  number: 5000
