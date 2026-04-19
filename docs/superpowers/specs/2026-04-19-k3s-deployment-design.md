@@ -7,7 +7,7 @@
 
 현재 Docker Compose + nginx + bash 기반의 blue/green 배포를 k3s(경량 Kubernetes)로 전환한다.
 단일 서버에 k3s를 설치하고, Traefik(기본 내장 Ingress) + cert-manager(Let's Encrypt SSL)를 사용한다.
-자체 Docker 레지스트리(`registry.yourdomain.com`)는 그대로 유지한다.
+자체 Docker 레지스트리(`registry.chanoo.dev`)는 그대로 유지한다.
 
 ## 아키텍처
 
@@ -15,7 +15,7 @@
 GitHub Actions (CI/CD)
        │
        ▼
-registry.yourdomain.com  ← 자체 Docker 레지스트리 (유지)
+registry.chanoo.dev  ← 자체 Docker 레지스트리 (유지)
        │
        ▼
   k3s (단일 서버)
@@ -43,7 +43,7 @@ deploy/
 ## 배포 흐름 (CI/CD)
 
 1. `main` 브랜치 push
-2. Docker 이미지 빌드 → `registry.yourdomain.com/media-server:<sha>` 푸시
+2. Docker 이미지 빌드 → `registry.chanoo.dev/media-server:<sha>` 푸시
 3. GitHub Secrets → k8s Secret 변환 후 `kubectl apply`
 4. `kubectl set image deployment/media-server app=registry.../media-server:<sha>`
 5. `kubectl rollout status deployment/media-server` 로 완료 확인
@@ -77,7 +77,7 @@ annotations:
   traefik.ingress.kubernetes.io/router.entrypoints: websecure
 spec:
   tls:
-    - hosts: [media.yourdomain.com]
+    - hosts: [media.chanoo.dev]
       secretName: media-tls
 ```
 
@@ -92,8 +92,8 @@ spec:
 
 ## 도메인
 
-- `media.yourdomain.com` — 미디어 서버 앱
-- `registry.yourdomain.com` — 자체 Docker 레지스트리 (k3s 외부에서 직접 운영 유지)
+- `media.chanoo.dev` — 미디어 서버 앱
+- `registry.chanoo.dev` — 자체 Docker 레지스트리 (k3s 외부에서 직접 운영 유지)
 
 ## 범위 밖
 
