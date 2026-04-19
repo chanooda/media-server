@@ -17,11 +17,10 @@ kubectl wait --for=condition=ready node --all --timeout=120s
 
 echo "▶ cert-manager 설치..."
 kubectl apply -f https://github.com/cert-manager/cert-manager/releases/latest/download/cert-manager.yaml
-echo "▶ cert-manager 준비 대기 (최대 2분)..."
-kubectl wait --namespace cert-manager \
-  --for=condition=ready pod \
-  --selector=app.kubernetes.io/instance=cert-manager \
-  --timeout=120s
+echo "▶ cert-manager 준비 대기 (최대 3분)..."
+kubectl -n cert-manager rollout status deployment/cert-manager --timeout=180s
+kubectl -n cert-manager rollout status deployment/cert-manager-webhook --timeout=180s
+kubectl -n cert-manager rollout status deployment/cert-manager-cainjector --timeout=180s
 
 echo "▶ 자체 레지스트리(registry.chanoo.dev) insecure 허용 설정..."
 sudo mkdir -p /etc/rancher/k3s
