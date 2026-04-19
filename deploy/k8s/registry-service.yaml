@@ -1,0 +1,13 @@
+# deploy/k8s/registry-service.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: registry
+  namespace: media-server
+spec:
+  selector:
+    app: registry
+  ports:
+    - port: 5000
+      targetPort: 5000
+  type: ClusterIP
