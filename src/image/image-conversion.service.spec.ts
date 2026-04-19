@@ -63,7 +63,7 @@ describe('ImageConversionService', () => {
     expect(mockStorage.deleteObject).toHaveBeenCalledWith('raw/abc-photo.jpg');
   });
 
-  it('변환 실패 시 raw/ 원본 유지 (deleteObject 미호출)', async () => {
+  it('변환 실패 시 raw/ → failed/ 로 이동 (무한 재시도 방지)', async () => {
     mockStorage.listObjects.mockResolvedValue([
       { key: 'raw/bad.jpg', contentType: 'image/jpeg' },
     ]);
@@ -72,10 +72,17 @@ describe('ImageConversionService', () => {
       contentType: 'image/jpeg',
     });
     mockImageService.convertToWebp.mockRejectedValue(new Error('convert fail'));
+    mockStorage.upload.mockResolvedValue(undefined);
+    mockStorage.deleteObject.mockResolvedValue(undefined);
 
     await service.processImages();
 
-    expect(mockStorage.deleteObject).not.toHaveBeenCalled();
+    expect(mockStorage.upload).toHaveBeenCalledWith(
+      'failed/bad.jpg',
+      expect.any(Buffer),
+      'image/jpeg',
+    );
+    expect(mockStorage.deleteObject).toHaveBeenCalledWith('raw/bad.jpg');
   });
 
   it('raw/가 비어있으면 아무것도 처리하지 않음', async () => {
